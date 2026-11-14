@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" path="res://Scenes/Menus/settings_panel.gd" id="1"]
 
-[node name="SettingsPanel" type="CenterContainer"]
+[node name="SettingsPanel" type="Control"]
+texture_filter = 1
 visible = false
 anchors_preset = 15
 anchor_right = 1.0

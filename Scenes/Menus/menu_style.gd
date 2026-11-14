@@ -6,6 +6,16 @@ const CREAM := Color("f3d8ae")
 
 static var _clean_paper: ImageTexture
 
+static func fit_dialog(dialog: AcceptDialog, preferred: Vector2i) -> void:
+	var available := dialog.get_parent().get_viewport().get_visible_rect().size
+	var compact := available.x < 900.0 or available.y < 600.0
+	dialog.theme = make_confirmation_theme(compact)
+	dialog.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+	# Include the embedded title bar in the available height.
+	var inset := Vector2(24, 64 if compact else 112)
+	dialog.size = Vector2i(Vector2(preferred).min((available - inset).max(Vector2.ONE)))
+	dialog.move_to_center()
+
 static func paper_texture() -> Texture2D:
 	if _clean_paper == null:
 		var image := PAPER.get_image()

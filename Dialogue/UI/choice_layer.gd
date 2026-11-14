@@ -6,6 +6,15 @@ extends "res://addons/dialogic/Modules/DefaultLayoutParts/Layer_VN_Choices/vn_ch
 func _ready() -> void:
 	connect("resized", _refresh_layout)
 	get_choices().minimum_size_changed.connect(_refresh_layout)
+	_watch_subtitles.call_deferred()
+	_refresh_layout()
+
+
+func _watch_subtitles() -> void:
+	for text in get_tree().get_nodes_in_group("dialogic_dialog_text"):
+		var box := text.get_parent() as Control
+		if box != null and not box.item_rect_changed.is_connected(_refresh_layout):
+			box.item_rect_changed.connect(_refresh_layout)
 	_refresh_layout()
 
 
@@ -18,6 +27,7 @@ func _apply_export_overrides() -> void:
 	for child in get_choices().get_children():
 		if child is DialogicNode_ChoiceButton:
 			child.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			child.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_refresh_layout()
 
 
@@ -26,14 +36,18 @@ func _refresh_layout() -> void:
 		return
 	var choices := get_choices()
 	var viewport_size: Vector2 = get("size")
-	var width := minf(1120.0, viewport_size.x * 0.84)
-	var subtitle_height := 112.0
+	var factor := minf(1.0, minf(viewport_size.x / 640.0, viewport_size.y / 360.0))
+	if factor <= 0.0:
+		return
+	var width := minf(1120.0, viewport_size.x / factor * 0.84)
+	var subtitle_top := viewport_size.y - 166.0 * factor
 	if not Engine.is_editor_hint():
 		for text in get_tree().get_nodes_in_group("dialogic_dialog_text"):
 			var box := text.get_parent() as Control
 			if box != null:
-				var measured := box.get_combined_minimum_size().y
-				subtitle_height = measured if measured > 0.0 else box.size.y
+				subtitle_top = minf(subtitle_top, box.get_global_rect().position.y - 8.0 * factor)
 	choices.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	choices.size = Vector2(width, choices.get_combined_minimum_size().y)
-	choices.position = Vector2((viewport_size.x - width) * 0.5, viewport_size.y - 54.0 - subtitle_height - 28.0 - choices.size.y)
+	factor = minf(factor, maxf(1.0, subtitle_top - 40.0 * factor) / maxf(1.0, choices.size.y))
+	choices.scale = Vector2.ONE * factor
+	choices.position = Vector2((viewport_size.x - choices.size.x * factor) * 0.5, subtitle_top - 28.0 * factor - choices.size.y * factor).round()

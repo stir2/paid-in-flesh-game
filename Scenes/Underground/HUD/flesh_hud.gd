@@ -59,7 +59,7 @@ func _ready() -> void:
 	_field_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_field_card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_field_card.theme = menu_style.make_theme(1.0, true)
-	_field_card.add_theme_stylebox_override("panel", menu_style.paper_style(10, 8, Color(1.16, 1.25, 1.34)))
+	_field_card.add_theme_stylebox_override("panel", menu_style.paper_style(22, 10, Color(1.16, 1.25, 1.34)))
 	add_child(_field_card)
 	var content := VBoxContainer.new()
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -108,17 +108,19 @@ func _layout_field_note() -> void:
 	if viewport == null:
 		return
 	var viewport_size := viewport.get_visible_rect().size
-	var width := 228.0
-	_field_note.custom_minimum_size.x = width - 30.0
-	_field_note.size.x = width - 30.0
+	var width := 244.0
+	_field_note.custom_minimum_size.x = width - 54.0
+	_field_note.size.x = width - 54.0
 	_field_card.size = Vector2(width, 0)
 	_field_card.reset_size()
 	var factor := clampf(minf(viewport_size.x / 640.0, viewport_size.y / 360.0), 0.5, 3.0)
 	var available := (viewport_size - Vector2(24, 64)).max(Vector2.ONE)
 	factor = minf(factor, minf(available.x / _field_card.size.x, available.y / _field_card.size.y))
+	if factor >= 1.0:
+		factor = floorf(factor)
 	_field_card.scale = Vector2.ONE * factor
 	var top := minf(104.0 * factor, maxf(12.0, viewport_size.y - _field_card.size.y * factor - 12.0))
-	_field_card.position = Vector2(viewport_size.x - _field_card.size.x * factor - 12.0, top)
+	_field_card.position = Vector2(viewport_size.x - _field_card.size.x * factor - 12.0, top).round()
 
 
 func _tutorial_enabled() -> bool:

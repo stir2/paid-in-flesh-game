@@ -114,7 +114,7 @@ func _fit() -> void:
 		return
 	var factor := minf(size.x / 1920.0, size.y / 1080.0)
 	_canvas.scale = Vector2.ONE * factor
-	_canvas.position = (size - Vector2(1920, 1080) * factor) / 2.0
+	_canvas.position = ((size - Vector2(1920, 1080) * factor) / 2.0).round()
 
 
 func _build_layout() -> void:
@@ -587,10 +587,13 @@ func _refresh_chief() -> void:
 	_chief_sprite = AnimatedSprite2D.new()
 	_chief_sprite.name = "ChiefIdle"
 	_chief_sprite.sprite_frames = CHIEF_IDLE
-	_chief_sprite.position = Vector2(269, 86)
+	_chief_sprite.position = Vector2(stage.size.x * 0.5, 86).round()
 	_chief_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_chief_sprite.scale = Vector2(4, 4)
 	stage.add_child(_chief_sprite)
+	stage.resized.connect(func():
+		if is_instance_valid(_chief_sprite):
+			_chief_sprite.position.x = roundf(stage.size.x * 0.5))
 	_chief_sprite.play("idle")
 	_chief_sprite.set_frame_and_progress(old_frame, old_progress)
 	var vitals_row := HFlowContainer.new()

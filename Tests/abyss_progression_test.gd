@@ -78,6 +78,12 @@ func run() -> void:
 				gate_rooms.append(gate_room)
 				built.append(gate_room)
 				var layer := gate_room.get_node("LevelBoundaryEast" if pos == left else "LevelBoundaryWest") as TileMapLayer
+				var rock := layer.get_node("BoundaryRock") as TileMapLayer
+				check(rock.visible and rock.self_modulate.a == 1.0 and not rock.collision_enabled, "Boundary rock is hidden or duplicates collision")
+				for cell in layer.get_used_cells():
+					check(rock.get_cell_source_id(cell) != -1 or cell in (layer as AbyssLevelBoundary).gate_cells, "Boundary collision has no visible rock or gate")
+				for cell in (layer as AbyssLevelBoundary).gate_cells:
+					check(rock.get_cell_source_id(cell) == -1, "Rock blocks the gate artwork")
 				check(layer.collision_enabled and layer.get_used_cells().size() == gate_room.room_size.y,"Locked boundary collision incomplete")
 				layer.update_internals()
 				var tile := layer.get_cell_tile_data(Vector2i(gate_room.room_size.x - 1 if pos == left else 0, gate_room.room_size.y / 2))

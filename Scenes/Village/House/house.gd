@@ -13,6 +13,7 @@ enum RoomPanel { STAIRS = 0, DESK = 1, WINDOW = 2 }
 var current_panel: RoomPanel = RoomPanel.DESK
 var ending_dialog: AcceptDialog
 var sleep_dialog: ConfirmationDialog
+var _sleep_shade: ColorRect
 var _descent_panel: Control
 var _descent_paper: PanelContainer
 var _descent_destinations: BoxContainer
@@ -89,6 +90,41 @@ func _fit_room_panels() -> void:
 	if not is_inside_tree():
 		return
 	$Panels.size = get_viewport_rect().size
+	if is_node_ready():
+		_fit_house_ui()
+
+
+func _fit_house_ui() -> void:
+	if not is_inside_tree():
+		return
+	var viewport_size := get_viewport_rect().size
+	var hud := $UI/TopHUD as Control
+	var hud_width := maxf(640.0, viewport_size.x)
+	var hud_scale := minf(1.0, viewport_size.x / hud_width)
+	hud.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	hud.size = Vector2(hud_width, hud.get_combined_minimum_size().y)
+	hud.scale = Vector2.ONE * hud_scale
+	var narrow := viewport_size.x < 1100.0
+	for actions: Control in [$Panels/StairsPanel/CenterBox, $Panels/DeskPanel/CenterBox, $Panels/WindowPanel/WindowActions]:
+		var natural := actions.get_combined_minimum_size()
+		var factor := minf(1.0, (viewport_size.x - 32.0) / maxf(1.0, natural.x))
+		actions.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		actions.size = natural
+		actions.scale = Vector2.ONE * factor
+		actions.position = Vector2((viewport_size.x - natural.x * factor) * 0.5,
+			viewport_size.y - natural.y * factor - (104.0 if narrow else 30.0)).round()
+	for button: Button in [left_nav_btn, right_nav_btn]:
+		var factor := minf(1.0, (viewport_size.x - 48.0) / 360.0)
+		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		button.size = button.get_combined_minimum_size()
+		button.scale = Vector2.ONE * factor
+		button.position = Vector2(16.0 if button == left_nav_btn else viewport_size.x - 16.0 - button.size.x * factor,
+			viewport_size.y - 24.0 - button.size.y * factor).round()
+	for modal in [refugee_modal, sacrifice_modal]:
+		_position_modal(modal)
+	for dialog in [sleep_dialog, ending_dialog]:
+		if dialog != null and dialog.visible:
+			preload("res://Scenes/Menus/menu_style.gd").fit_dialog(dialog, Vector2i(680, 240))
 
 func _ready() -> void:
 	var pointer := preload("res://Scenes/Village/House/controller_pointer.gd").new()
@@ -97,6 +133,9 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_fit_room_panels)
 	_fit_room_panels()
 	_build_dialogs()
+	$UI/TopHUD.minimum_size_changed.connect(_fit_house_ui.call_deferred)
+	for actions: Control in [$Panels/StairsPanel/CenterBox, $Panels/DeskPanel/CenterBox, $Panels/WindowPanel/WindowActions]:
+		actions.minimum_size_changed.connect(_fit_house_ui.call_deferred)
 	var menu_style := preload("res://Scenes/Menus/menu_style.gd")
 	var modal_theme := menu_style.make_theme()
 	var action_theme := menu_style.make_confirmation_theme()
@@ -164,6 +203,7 @@ func _ready() -> void:
 		start_panel = RoomPanel.STAIRS
 	set_panel(start_panel)
 	_refresh_top_hud()
+	_fit_house_ui.call_deferred()
 	if GameController.boss_defeated:
 		call_deferred("_play_dawn")
 	elif GameController.is_final_day():
@@ -472,11 +512,13 @@ func _on_sleep_requested() -> void:
 		var dinner := "Rations left after feeding the village: %d." % food if food >= 0 else "Food is short by %d rations. Some villagers will go hungry." % -food
 		sleep_dialog.dialog_text = "Banked Flesh: %d / %d. %s\n\n%s" % [GameController.flesh, GameController.current_quota(), toll, dinner]
 		sleep_dialog.popup_centered(Vector2i(680, 210))
+		_fit_house_ui()
 		return
 	if not preview.toll_met:
 		sleep_dialog.dialog_text = ("The toll is short. You will choose who the monster takes."
 			if preview.player_chooses else "The toll is short. The monster will choose who it takes.")
 		sleep_dialog.popup_centered(Vector2i(660, 220))
+		_fit_house_ui()
 		return
 	_sleep()
 
@@ -502,6 +544,7 @@ func _refresh_top_hud() -> void:
 		GameController.stats.get("max_stamina", 100),
 		GameController.village_health,
 	]
+	_fit_house_ui.call_deferred()
 	_refresh_panel_content()
 
 
@@ -642,7 +685,10 @@ func _center_modal(modal: Control) -> void:
 func _position_modal(modal: Control) -> void:
 	if not is_inside_tree() or not is_instance_valid(modal) or not modal.is_inside_tree():
 		return
-	modal.position = (get_viewport_rect().size - modal.size) * 0.5
+	var available := (get_viewport_rect().size - Vector2(24, 24)).max(Vector2.ONE)
+	var factor := minf(1.0, minf(available.x / maxf(1.0, modal.size.x), available.y / maxf(1.0, modal.size.y)))
+	modal.scale = Vector2.ONE * factor
+	modal.position = ((get_viewport_rect().size - modal.size * factor) * 0.5).round()
 
 
 func _on_night_resolved(report: Dictionary) -> void:
@@ -688,6 +734,7 @@ func _present_village_wiped() -> void:
 	ending_dialog.confirmed.connect(_return_to_menu, CONNECT_ONE_SHOT)
 	ending_dialog.canceled.connect(_return_to_menu, CONNECT_ONE_SHOT)
 	ending_dialog.popup_centered(Vector2i(680, 240))
+	_fit_house_ui()
 
 
 func _return_to_menu() -> void:
@@ -696,7 +743,16 @@ func _return_to_menu() -> void:
 
 func _build_dialogs() -> void:
 	var confirm_theme := preload("res://Scenes/Menus/menu_style.gd").make_confirmation_theme()
+	var backdrop := CanvasLayer.new()
+	backdrop.layer = 140
+	add_child(backdrop)
+	_sleep_shade = ColorRect.new()
+	_sleep_shade.color = Color(0.045, 0.025, 0.055, 0.65)
+	backdrop.add_child(_sleep_shade)
+	_sleep_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sleep_shade.hide()
 	sleep_dialog = ConfirmationDialog.new()
+	sleep_dialog.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	sleep_dialog.transparent_bg = true
 	sleep_dialog.title = "End the day?"
 	sleep_dialog.ok_button_text = "Sleep"
@@ -705,8 +761,10 @@ func _build_dialogs() -> void:
 	sleep_dialog.get_label().vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	sleep_dialog.get_label().autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sleep_dialog.confirmed.connect(_sleep)
+	sleep_dialog.visibility_changed.connect(func(): _sleep_shade.visible = sleep_dialog.visible)
 	add_child(sleep_dialog)
 	ending_dialog = AcceptDialog.new()
+	ending_dialog.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	ending_dialog.transparent_bg = true
 	ending_dialog.title = "Run status"
 	ending_dialog.theme = confirm_theme

@@ -514,7 +514,11 @@ func _build_hud() -> void:
 func _fit_result() -> void:
 	if not is_inside_tree() or not is_instance_valid(_result): return
 	var viewport_size := get_viewport_rect().size
-	_result.position = Vector2(36.0, maxf(36.0, viewport_size.y - _result.size.y - 36.0))
+	var available := (viewport_size - Vector2(48, 48)).max(Vector2.ONE)
+	var factor := minf(1.0, minf(available.x / maxf(1.0, _result.size.x), available.y / maxf(1.0, _result.size.y)))
+	_result.scale = Vector2.ONE * factor
+	_result.position = Vector2(minf(36.0, (viewport_size.x - _result.size.x * factor) * 0.5),
+		maxf(24.0, viewport_size.y - _result.size.y * factor - 36.0)).round()
 
 func _fit_view() -> void:
 	if not is_inside_tree() or not is_instance_valid(_hud): return

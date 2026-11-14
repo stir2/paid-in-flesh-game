@@ -7,7 +7,7 @@ var service: AbyssSpecialRooms
 var exploration: AbyssExplorationState
 var room_size: Vector2i
 var tile_pixels: int = 16
-var nearby_gate_count: int = 3
+var nearby_gate_count: int = 2
 var nearby_fragment_count: int = 3
 
 func _init(specials: AbyssSpecialRooms, state: AbyssExplorationState, size: Vector2i) -> void:
@@ -54,6 +54,7 @@ func connections(coords: Vector2i) -> Array[Dictionary]:
 		var gate: Dictionary = {}
 		if side in [1,3] and service.level_at(coords) != service.level_at(adjacent):
 			gate = service.gate_at(coords if side == 1 else adjacent)
+			if gate.is_empty(): continue # Open cave art does not bypass a level boundary.
 		if not room.allows_open_adjacency(neighbor) and gate.is_empty(): continue
 		var tangent := room_size.y*0.5 if side%2 == 1 else room_size.x*0.5
 		var a := Vector2(room_size.x-0.5 if side == 1 else 0.5,tangent) if side%2 == 1 else Vector2(tangent,0.5 if side == 0 else room_size.y-0.5)
@@ -109,11 +110,31 @@ func _nearby_progression(player_position: Vector2) -> Array[Dictionary]:
 		return String(a.id) < String(b.id) if is_equal_approx(da,db) else da < db)
 	var result: Array[Dictionary] = []
 	var counts := {"gate":0,"fragment":0}
+	var gate_destinations := {}
 	for marker in candidates:
 		var limit := nearby_gate_count if marker.kind == "gate" else nearby_fragment_count
 		if counts[marker.kind] >= limit: continue
+		if marker.kind == "gate":
+			var destination := service.state.destination_for_gate_id(marker.id)
+			if gate_destinations.has(destination): continue
+			gate_destinations[destination] = true
 		counts[marker.kind] += 1
 		result.append(marker)
+	return result
+
+func _nearest_gate_per_level(markers: Array[Dictionary], player_position: Vector2) -> Array[Dictionary]:
+	var nearest: Dictionary = {}
+	for marker in markers:
+		if marker.kind != "gate": continue
+		var destination := service.state.destination_for_gate_id(marker.id)
+		var previous: Dictionary = nearest.get(destination, {})
+		var distance := player_position.distance_squared_to(marker.position)
+		if previous.is_empty() or distance < player_position.distance_squared_to(previous.position):
+			nearest[destination] = marker
+	var result: Array[Dictionary] = []
+	for marker in markers:
+		if marker.kind != "gate" or nearest[service.state.destination_for_gate_id(marker.id)].id == marker.id:
+			result.append(marker)
 	return result
 
 func snapshot(current_level: int, player_position: Vector2 = Vector2.ZERO, local_rooms := Rect2i(), show_hints := true) -> Dictionary:
@@ -176,4 +197,6 @@ func snapshot(current_level: int, player_position: Vector2 = Vector2.ZERO, local
 	var grave: Dictionary = exploration.graves.get(service.world,{})
 	if not grave.is_empty():
 		markers.append({"kind":"grave","id":grave.id,"position":Vector2(grave.position_x,grave.position_y),"active":true})
+	if show_hints:
+		markers = _nearest_gate_per_level(markers, player_position)
 	return {"nodes":nodes,"edges":edges,"markers":markers}

@@ -2,7 +2,7 @@ class_name AbyssMapOverlay
 extends CanvasLayer
 ## Owns only its own pause. Existing pause-menu state is never taken over.
 @export_range(0.0,0.5,0.01) var fade_seconds: float = 0.12
-@export_range(0,10,1) var nearby_gate_count: int = 3
+@export_range(0,10,1) var nearby_gate_count: int = 2
 @export_range(0,10,1) var nearby_fragment_count: int = 3
 var runtime: AbyssRuntime
 var model: AbyssMapModel

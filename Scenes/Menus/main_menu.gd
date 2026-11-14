@@ -10,6 +10,7 @@ var _default_window: Texture2D
 
 
 func _ready() -> void:
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var action_theme := Theme.new()
 	preload("res://Scenes/Menus/menu_style.gd").apply_buttons(action_theme, 20, 8, 2)
 	for child in $Buttons.get_children():
@@ -102,6 +103,7 @@ func _new_game() -> void:
 	if SaveManager.has_save_file(_run_length):
 		new_game_dialog.dialog_text = "Saving a new run will overwrite your %d-day campaign save." % _run_length
 		new_game_dialog.popup_centered(Vector2i(560, 162))
+		preload("res://Scenes/Menus/menu_style.gd").fit_dialog(new_game_dialog, Vector2i(560, 162))
 		new_game_dialog.get_cancel_button().grab_focus()
 	else:
 		get_tree().current_scene.start_new_game(_run_length)
@@ -116,6 +118,11 @@ func _fit_actions() -> void:
 	if not is_inside_tree(): return
 	var buttons := $Buttons as VBoxContainer
 	var viewport_size := get_viewport_rect().size
+	# Main parents this scene under a Node, so keep its full-screen bounds
+	# explicit as the Web canvas changes aspect ratio.
+	size = viewport_size
+	if new_game_dialog.visible:
+		preload("res://Scenes/Menus/menu_style.gd").fit_dialog(new_game_dialog, Vector2i(560, 162))
 	var natural := buttons.get_combined_minimum_size().max(Vector2(360, 1))
 	var available := (viewport_size - Vector2(32, 32)).max(Vector2.ONE)
 	var factor := minf(1.0, minf(available.x / natural.x, available.y / natural.y))

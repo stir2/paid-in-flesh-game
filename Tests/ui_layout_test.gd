@@ -44,8 +44,18 @@ func run() -> void:
 		await settle()
 		contained(settings._paper,bounds,"Settings")
 		check(settings._paper.get_global_rect().get_center().distance_to(bounds.get_center()) < 1,"Settings is not centered after resize")
+		check(settings.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Settings uses blurry texture filtering")
 		host.change_scene(host.HOUSE_SCENE)
 		await settle()
+		if dimensions == Vector2i(1920, 1080):
+			var house: Node2D = host.active_scene
+			house.sleep_dialog.dialog_text = "End the day?"
+			house.sleep_dialog.popup_centered(Vector2i(680, 210))
+			await settle()
+			check(house._sleep_shade.visible and house._sleep_shade.color.a >= 0.5, "End-of-day dialog lacks background contrast")
+			house.sleep_dialog.hide()
+			await settle()
+			check(not house._sleep_shade.visible, "End-of-day backdrop blocks input after closing")
 		host.pause_menu.toggle()
 		await settle()
 		contained(host.pause_menu.get_node("Panel/Layout/Paper"),bounds,"Pause menu")
@@ -79,6 +89,7 @@ func run() -> void:
 	var abyss: AbyssRuntime = host.active_scene
 	check(abyss.is_active(), "Actual Abyss presentation did not start")
 	var hud: AbyssFleshHUD = abyss.flesh_hud
+	check(abyss.abyss_map.panel.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Map legend uses blurry texture filtering")
 	for dimensions in [Vector2i(640,360), Vector2i(1280,720), Vector2i(1920,1080), Vector2i(824,789), Vector2i(720,1280)]:
 		root.size = dimensions
 		hud.replay()
@@ -86,6 +97,7 @@ func run() -> void:
 		var logical := root.get_visible_rect().size
 		var bounds := Rect2(Vector2.ZERO, logical)
 		var hint := hud._field_card.get_global_rect()
+		check(hud._field_note.get_global_rect().position.x - hint.position.x >= 26 * hud._field_card.scale.x, "Tutorial text overlaps the torn paper edge")
 		contained(hud._field_card, bounds, "Actual Abyss hint")
 		check(hint.size.x <= logical.x * 0.4 and hint.size.y <= logical.y * 0.4, "Hint dominates the actual Abyss viewport")
 		check(hint.position.y >= abyss.abyss_map._minimap.get_global_rect().end.y, "Hint overlaps the minimap")

@@ -39,7 +39,11 @@ func _refresh_layout() -> void:
 	if not is_node_ready():
 		return
 	var viewport_size: Vector2 = get("size")
-	var maximum_box_width := minf(maximum_width, viewport_size.x * 0.9)
+	var factor := minf(1.0, minf(viewport_size.x / 640.0, viewport_size.y / 360.0))
+	if factor <= 0.0:
+		return
+	var logical_size := viewport_size / factor
+	var maximum_box_width := minf(maximum_width, logical_size.x * 0.9 - 24.0)
 	var font := dialog_text.get_theme_font("normal_font")
 	var font_size := dialog_text.get_theme_font_size("normal_font_size")
 	var full_text := dialog_text.get_parsed_text()
@@ -47,9 +51,11 @@ func _refresh_layout() -> void:
 	var width := clampf(text_width + 112.0, 260.0, maximum_box_width)
 	var text_height := font.get_multiline_string_size(full_text, HORIZONTAL_ALIGNMENT_LEFT, width - 96.0, font_size).y
 	content.size = Vector2(width, maxf(56.0, text_height + 28.0))
-	content.position = Vector2((viewport_size.x - content.size.x) * 0.5, viewport_size.y - bottom_margin - content.size.y)
+	content.scale = Vector2.ONE * factor
+	content.position = Vector2((viewport_size.x - content.size.x * factor) * 0.5, viewport_size.y - (bottom_margin + content.size.y) * factor).round()
 	var frame: Panel = $Subtitles/Frame
-	frame.position = content.position - Vector2(12, 8)
+	frame.scale = Vector2.ONE * factor
+	frame.position = content.position - Vector2(12, 8) * factor
 	frame.size = content.size + Vector2(24, 16)
 
 

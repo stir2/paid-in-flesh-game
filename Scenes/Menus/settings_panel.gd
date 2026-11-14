@@ -1,11 +1,10 @@
-extends CenterContainer
+extends Control
 
 signal closed(save_error: String)
 
 const MENU_STYLE = preload("res://Scenes/Menus/menu_style.gd")
 const AUDIO_LABELS := [&"Master", &"Music", &"Sound effects"]
 
-var _layout: Control
 var _paper: PanelContainer
 var _content: VBoxContainer
 var _fullscreen_button: Button
@@ -16,14 +15,9 @@ var _volume_labels: Dictionary = {}
 
 
 func _ready() -> void:
-	# Keep the paper's minimum size from enlarging this full-screen container.
-	_layout = Control.new()
-	_layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_layout.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	add_child(_layout)
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_paper = PanelContainer.new()
-	_layout.add_child(_paper)
+	add_child(_paper)
 	_paper.resized.connect(_position_paper)
 	_content = VBoxContainer.new()
 	_paper.add_child(_content)
@@ -72,6 +66,7 @@ func open() -> void:
 		_sliders[bus].set_value_no_signal(percent)
 		_volume_labels[bus].text = "%d%%" % percent
 	show()
+	_fit_layout()
 	_fullscreen_button.grab_focus()
 
 
@@ -139,6 +134,9 @@ func _fit_layout() -> void:
 	if not is_inside_tree():
 		return
 	var viewport_size := get_viewport().get_visible_rect().size
+	# Refit on opening as well as resizing; a hidden panel may still have
+	# its previous canvas bounds when a browser resize arrives.
+	size = viewport_size
 	var pixel_mode := viewport_size.y <= 480 or viewport_size.x <= 720
 	theme = MENU_STYLE.make_confirmation_theme(pixel_mode)
 	var rule := StyleBoxLine.new()
@@ -179,9 +177,9 @@ func _fit_layout() -> void:
 func _position_paper() -> void:
 	if not is_inside_tree() or _paper == null:
 		return
-	var viewport_size := get_viewport_rect().size
+	var viewport_size := size
 	var paper_size := _paper.size
 	var available := (viewport_size - Vector2(24, 24)).max(Vector2.ONE)
 	var factor := minf(1.0, minf(available.x / maxf(1.0, paper_size.x), available.y / maxf(1.0, paper_size.y)))
 	_paper.scale = Vector2.ONE * factor
-	_paper.position = -paper_size * factor * 0.5 # The zero-size layout is centered by CenterContainer.
+	_paper.position = ((viewport_size - paper_size * factor) * 0.5).round()

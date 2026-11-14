@@ -237,9 +237,10 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 10
 
-[node name="HBox" type="HBoxContainer" parent="UI/TopHUD/Margin" unique_id=2105722878]
+[node name="HBox" type="HFlowContainer" parent="UI/TopHUD/Margin" unique_id=2105722878]
 layout_mode = 2
-theme_override_constants/separation = 32
+theme_override_constants/h_separation = 32
+theme_override_constants/v_separation = 8
 alignment = 1
 
 [node name="TopDayLabel" type="Label" parent="UI/TopHUD/Margin/HBox" unique_id=227663414]

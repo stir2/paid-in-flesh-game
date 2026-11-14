@@ -125,6 +125,26 @@ func run() -> void:
 	await tick(20)
 	check(state.is_visited(world,coords),"Dwell time did not discover current room")
 	var graph := model.snapshot(service.level_at(coords))
+	var gate_destinations := {}
+	for marker in model.snapshot(service.level_at(coords), player.global_position).markers:
+		if marker.kind != "gate": continue
+		var destination := service.state.destination_for_gate_id(marker.id)
+		check(not gate_destinations.has(destination), "Map shows duplicate gates for the same level transition")
+		gate_destinations[destination] = true
+	check(gate_destinations.size() <= 2, "Three-level Abyss shows more than two gate transitions")
+	var level_bounds := service.config.room_bounds(1, service.routes.get_chunk(Vector2i.ZERO).config.chunk_size.x)
+	var left := Vector2i(level_bounds.y - 1, 0)
+	if not service.gate_at(left).is_empty(): left.y += 1
+	var right := left + Vector2i.RIGHT
+	# Temporarily supply an OPEN/OPEN edge in this otherwise all-PACKED fixture.
+	var left_room := service.routes.get_room(left)
+	var right_room := service.routes.get_room(right)
+	var original_regions := [left_room.region, right_room.region]
+	left_room.region = AbyssRoomData.Region.OPEN
+	right_room.region = AbyssRoomData.Region.OPEN
+	check(not model.connections(left).any(func(edge: Dictionary): return edge.neighbor == right), "Map invents an open passage through the level wall")
+	left_room.region = original_regions[0]
+	right_room.region = original_regions[1]
 	check(graph.nodes[coords].visited and graph.edges.is_empty(),"Single visited room revealed unexplored connections")
 	var connections := model.connections(coords)
 	check(not connections.is_empty(),"Entrance has no graph connections")
