@@ -194,6 +194,7 @@ func _configure_world(state: AbyssRoomState) -> bool:
 		return false
 	if not stream.deferred_templates.is_empty():
 		print("Abyss: ",stream.deferred_templates.size()," authored templates remain registered at their original layout; using procedural fallback until remade for ",configuration.room_size," / ",route_configuration.opening_schema)
+	stream.specials.ensure_checkpoint_access = game.run_length == 5
 	state.world_settings = AbyssRuntimeWorldSettings.capture(configs,template_registry)
 	exploration.configure(state.exploration,stream.specials.world)
 	abyss_map.configure(stream.specials,state.exploration,configuration.room_size)
@@ -348,7 +349,9 @@ func _apply_presentation() -> void:
 	for key in ["content_scale_size","content_scale_mode","content_scale_aspect","content_scale_stretch","size","canvas_item_default_texture_filter"]:
 		_saved_window[key] = window.get(key)
 	window.content_scale_size = viewport_pixels
-	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	# Keep the same logical world size and integer sprite scale, but rasterize
+	# fonts and UI at the window resolution instead of enlarging a 640x360 image.
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	window.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_INTEGER
 	window.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST

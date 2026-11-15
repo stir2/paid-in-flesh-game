@@ -32,6 +32,9 @@ static func apply(saved: Dictionary, configs: Array[Resource]) -> bool:
 			if not (info.usage & PROPERTY_USAGE_STORAGE) or not (info.usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
 				continue
 			if not values.has(info.name):
+				if configs[i] is AbyssProgressionConfig and info.name == &"checkpoint_requires_route":
+					configs[i].set(info.name, false)
+					continue
 				# Version 2 saves predate the optional compact layout parameters.
 				if configs[i] is AbyssProgressionConfig and info.name in [&"depth_chunks", &"fragment_interval"]:
 					continue

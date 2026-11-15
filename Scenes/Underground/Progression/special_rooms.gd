@@ -7,6 +7,8 @@ var routes: AbyssRouteGenerator
 var config: AbyssProgressionConfig
 var state: AbyssProgressionState
 var world: String
+## Runtime policy, independent of saved placement IDs. Five-day campaigns only.
+var ensure_checkpoint_access := false
 var _bands: Dictionary = {}
 var _checkpoint_scores: Dictionary[Vector2i, float] = {}
 func _init(generator: AbyssRouteGenerator, settings: AbyssProgressionConfig, mutations: AbyssProgressionState, world_id: String = "") -> void:
@@ -166,7 +168,7 @@ func activated_checkpoints() -> Array:
 func _checkpoint_score(coords: Vector2i) -> float:
 	if not _checkpoint_scores.has(coords):
 		var valid := coords.y >= 0 and level_at(coords) != 0
-		if valid and routes.regions.get_room(coords).region == AbyssRoomData.Region.PACKED:
+		if valid and (config.checkpoint_requires_route or routes.regions.get_room(coords).region == AbyssRoomData.Region.PACKED):
 			valid = not routes.get_room(coords).required_connections.is_empty()
 		_checkpoint_scores[coords] = _roll(coords,"checkpoint") if valid else -1.0
 	return _checkpoint_scores[coords]

@@ -88,6 +88,8 @@ func run() -> void:
 		await process_frame
 	var abyss: AbyssRuntime = host.active_scene
 	check(abyss.is_active(), "Actual Abyss presentation did not start")
+	check(root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS, "Abyss rasterizes UI into its low-resolution world image")
+	check(abyss.camera.world_view_size().is_equal_approx(Vector2(abyss.viewport_pixels) / abyss.camera.zoom), "UI clarity fix changed the world field of view")
 	var hud: AbyssFleshHUD = abyss.flesh_hud
 	check(abyss.abyss_map.panel.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Map legend uses blurry texture filtering")
 	for dimensions in [Vector2i(640,360), Vector2i(1280,720), Vector2i(1920,1080), Vector2i(824,789), Vector2i(720,1280)]:
@@ -95,6 +97,10 @@ func run() -> void:
 		hud.replay()
 		await settle()
 		var logical := root.get_visible_rect().size
+		# The headless dummy renderer has no physical render target. Native
+		# rendering must retain the full raster while keeping logical coordinates.
+		if DisplayServer.get_name() != "headless" and dimensions in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+			check(root.get_texture().get_size() == Vector2(dimensions), "Abyss UI raster is still limited to 640x360")
 		var bounds := Rect2(Vector2.ZERO, logical)
 		var hint := hud._field_card.get_global_rect()
 		check(hud._field_note.get_global_rect().position.x - hint.position.x >= 26 * hud._field_card.scale.x, "Tutorial text overlaps the torn paper edge")

@@ -20,6 +20,8 @@ func _run() -> void:
 	root.add_child(short_world)
 	var state := AbyssRoomState.new()
 	check(short_world._configure_world(state), "New short world configuration failed")
+	check(short_world.stream.specials.ensure_checkpoint_access, "Five-day checkpoint access policy was not enabled")
+	check(short_world.progression_configuration.checkpoint_requires_route, "New five-day checkpoints include isolated caverns")
 	var first_seed := short_world.configuration.global_seed
 	check(short_world.progression_configuration.depth_chunks == 0
 		and short_world.progression_configuration.level_width_chunks == 2
@@ -52,12 +54,16 @@ func _run() -> void:
 	var configs: Array[Resource] = [region,routes,AbyssTerrainConfig.new(),progression]
 	state = AbyssRoomState.new()
 	state.world_settings = AbyssRuntimeWorldSettings.capture(configs,load("res://Scenes/Underground/Rooms/authored_registry.tres"))
+	# This setting did not exist in previously shipped five-day saves.
+	state.world_settings["3"].erase("checkpoint_requires_route")
 	snapshot = JSON.stringify(state.world_settings)
 	var legacy := scene.instantiate() as AbyssRuntime
 	legacy.auto_start = false
 	root.add_child(legacy)
 	check(legacy._configure_world(state), "Existing compact save configuration failed")
-	check(JSON.stringify(state.world_settings) == snapshot, "Existing compact save was retuned")
+	var restored_settings := state.world_settings.duplicate(true)
+	restored_settings["3"].erase("checkpoint_requires_route")
+	check(JSON.stringify(restored_settings) == snapshot and not legacy.progression_configuration.checkpoint_requires_route, "Existing compact save was retuned")
 	check(legacy.configuration.global_seed == 514087 and legacy.progression_configuration.depth_chunks == 2,
 		"Existing compact save lost its original seed or bounds")
 	legacy.free()
@@ -68,6 +74,8 @@ func _run() -> void:
 	classic.auto_start = false
 	root.add_child(classic)
 	check(classic._configure_world(AbyssRoomState.new()), "Classic world configuration failed")
+	check(not classic.stream.specials.ensure_checkpoint_access, "Checkpoint access changes leaked into ten-day worlds")
+	check(not classic.progression_configuration.checkpoint_requires_route, "Ten-day checkpoint placement changed")
 	check(classic.configuration.global_seed == AbyssRegionConfig.new().global_seed
 		and classic.configuration.open_threshold == 0.36
 		and classic.progression_configuration.level_width_chunks == 3

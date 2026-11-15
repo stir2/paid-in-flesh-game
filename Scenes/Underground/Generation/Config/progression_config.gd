@@ -8,6 +8,9 @@ const LEVEL_COUNT := 3
 @export_range(0.0, 1.0) var checkpoint_probability: float = 0.08
 ## Minimum Euclidean distance between checkpoint room centers, in rooms.
 @export_range(1, 16) var checkpoint_min_spacing_rooms: int = 4
+## New five-day worlds exclude isolated natural caverns. Saved worlds keep
+## their original rule so checkpoint IDs do not move on load.
+@export var checkpoint_requires_route := false
 const FRAGMENT_INTERVAL := 50
 const EXTRA_FRAGMENT_PROBABILITY := 1.0 / 200.0
 const FRAGMENTS_PER_KEY := 2

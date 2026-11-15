@@ -8,7 +8,10 @@ func _draw() -> void:
 		"checkpoint":
 			var diamond := PackedVector2Array([Vector2(0,-6),Vector2(5,0),Vector2(0,6),Vector2(-5,0),Vector2(0,-6)])
 			if active: draw_colored_polygon(diamond,Color(0.7,1.0,0.9))
-			else: draw_polyline(diamond,Color(0.7,0.9,0.85),1.5,true)
+			else:
+				# Room dots and route lines must not fill an inactive checkpoint.
+				draw_colored_polygon(diamond,Color(0.025,0.035,0.045))
+				draw_polyline(diamond,Color(0.7,0.9,0.85),1.5,true)
 		"gate":
 			if active:
 				draw_rect(Rect2(-5,-10,10,20),Color(0.4,1,0.7,0.15))

@@ -54,6 +54,51 @@ static func _position(room: AbyssAuthoredRoom, kind: StringName) -> Vector2:
 				if not _blocked(room,Vector2i(x,y)):
 					return (Vector2(x,y)+Vector2(0.5,0.5))*room.tile_pixels
 	return fallback
+
+## Five-day checkpoint rooms need a traversable approach, not just an empty
+## marker rectangle. Keep placement IDs and boundary apertures unchanged.
+static func _checkpoint_access(room: AbyssAuthoredRoom, request: AbyssRoomConstructionRequest, point: Vector2) -> void:
+	var center := Vector2i(point / room.tile_pixels)
+	var paths: Dictionary[Vector2i, bool] = {}
+	for id in request.requirements.route_openings:
+		var opening: Vector2i = request.requirements.route_openings[id]
+		var side := ["north", "east", "south", "west"].find(String(id).get_slice(":", 0))
+		var inside := opening - AbyssRegionGenerator.DIRECTIONS[side] * 2
+		_checkpoint_segment(paths, inside, Vector2i(center.x, inside.y))
+		_checkpoint_segment(paths, Vector2i(center.x, inside.y), center)
+		_checkpoint_segment(paths, opening, inside)
+	if request.requirements.region == AbyssRoomData.Region.OPEN:
+		# Caverns can be entered outside the logical route openings. A continuous
+		# central ladder also reaches the checkpoint from below its platform.
+		_checkpoint_segment(paths, Vector2i(center.x, 2), Vector2i(center.x, room.room_size.y - 3))
+	var climbables := room.get_node("Climbables") as TileMapLayer
+	for cell in paths:
+		for dy in range(-2, 3):
+			for dx in range(-2, 3):
+				var clear_cell := cell + Vector2i(dx, dy)
+				if clear_cell.x <= 0 or clear_cell.y <= 0 or clear_cell.x >= room.room_size.x - 1 or clear_cell.y >= room.room_size.y - 1:
+					continue
+				for key in ["Solid", "ConditionalWalls", "BreakableWalls", "Platforms", "ConditionalPlatforms", "Hazards"]:
+					var layer := room.get_node_or_null(NodePath(key)) as TileMapLayer
+					if layer != null: layer.erase_cell(clear_cell)
+		if cell.x > 0 and cell.y > 0 and cell.x < room.room_size.x - 1 and cell.y < room.room_size.y - 1:
+			climbables.set_cell(cell, 0, Vector2i(3, 0))
+	# A permanent one-way landing lets the player rest and activate the marker.
+	var floor_y := roundi((point.y + 24.0) / room.tile_pixels)
+	var platforms := room.get_node("Platforms") as TileMapLayer
+	for x in range(center.x - 1, center.x + 2):
+		platforms.set_cell(Vector2i(x, floor_y), 0, Vector2i.RIGHT)
+	room.climbable_cells.assign(climbables.get_used_cells())
+	room.climbable_regions = AbyssTileGroups.describe(climbables, request.template_id)
+
+static func _checkpoint_segment(cells: Dictionary[Vector2i, bool], start: Vector2i, end: Vector2i) -> void:
+	var direction := Vector2i(signi(end.x - start.x), signi(end.y - start.y))
+	var cell := start
+	while true:
+		cells[cell] = true
+		if cell == end: break
+		cell += direction
+
 static func apply(room: AbyssAuthoredRoom, request: AbyssRoomConstructionRequest, service: AbyssSpecialRooms) -> void:
 	var coords := request.requirements.global_coords
 	var level := service.level_at(coords)
@@ -61,9 +106,13 @@ static func apply(room: AbyssAuthoredRoom, request: AbyssRoomConstructionRequest
 		return
 	for definition in service.definitions_at(coords):
 		var point := Vector2(room.room_size.x-0.5,room.room_size.y/2+0.5)*room.tile_pixels if definition.kind == "gate" else _position(room,definition.kind)
+		if point.x < 0 and definition.kind == "checkpoint" and service.ensure_checkpoint_access:
+			point = Vector2(room.room_size / 2) * room.tile_pixels
 		if point.x < 0:
 			room.content_warnings.append("No clear special marker position: " + definition.id)
 			continue
+		if definition.kind == "checkpoint" and service.ensure_checkpoint_access:
+			_checkpoint_access(room, request, point)
 		var spawn := AbyssSpecialSpawnRequest.new()
 		spawn.kind = StringName(definition.kind)
 		spawn.marker_id = StringName(definition.id)

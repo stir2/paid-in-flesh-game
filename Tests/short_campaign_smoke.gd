@@ -50,6 +50,7 @@ func _run() -> void:
 			break
 		await process_frame
 	_check(abyss.is_active(), "Short Abyss failed to stream")
+	_check(root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS, "Five-day Abyss UI uses low-resolution viewport rendering")
 	if not abyss.is_active():
 		quit(1)
 		return

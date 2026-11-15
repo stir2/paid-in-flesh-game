@@ -6,3 +6,4 @@
 script = ExtResource("1_progression")
 level_width_chunks = 2
 fragment_interval = 25
+checkpoint_requires_route = true
