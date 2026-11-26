@@ -179,8 +179,8 @@ func _configure_world(state: AbyssRoomState) -> bool:
 		if template_registry.resource_path.is_empty():
 			fail_startup("Save the runtime template registry as a .tres resource first")
 			return false
+		configuration.global_seed = randi()
 		if game.run_length == GameController.SHORT_RUN_LENGTH:
-			configuration.global_seed = randi()
 			progression_configuration = short_campaign_progression_configuration.duplicate() as AbyssProgressionConfig
 			configs[3] = progression_configuration
 		settings = AbyssRuntimeWorldSettings.capture(configs,template_registry)
