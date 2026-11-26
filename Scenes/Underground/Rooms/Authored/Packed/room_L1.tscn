@@ -27,7 +27,7 @@ tile_set = ExtResource("2_pwk3j")
 [node name="Platforms" type="TileMapLayer" parent="." unique_id=925235512]
 z_index = -3
 texture_filter = 1
-tile_map_data = PackedByteArray("AAAMABUAAAABAAAAAAANABUAAAABAAAAAAAMAA0AAAABAAAAAAANAA0AAAABAAAAAAASABEAAAABAAAAAAATABEAAAABAAAAAAASABkAAAABAAAAAAATABkAAAABAAAAAAA=")
+tile_map_data = PackedByteArray("AAAMABUAAAABAAAAAAANABUAAAABAAAAAAAMAA0AAAABAAAAAAANAA0AAAABAAAAAAASABEAAAABAAAAAAATABEAAAABAAAAAAASABkAAAABAAAAAAATABkAAAABAAAAAAALAAMAAAABAAAAAAAKAAMAAAABAAAAAAA=")
 tile_set = ExtResource("2_pwk3j")
 
 [node name="ConditionalPlatforms" type="TileMapLayer" parent="." unique_id=22730198]
@@ -38,7 +38,7 @@ tile_set = ExtResource("2_pwk3j")
 [node name="Hazards" type="TileMapLayer" parent="." unique_id=1683948581]
 z_index = -5
 texture_filter = 1
-tile_map_data = PackedByteArray("AAAJABQAAAAGAAAAAAASACEAAAAGAAAAAAATACEAAAAGAAAAAAANABcAAAAHAAAAAAASABMAAAAHAAAAAAA=")
+tile_map_data = PackedByteArray("AAAJABQAAAAGAAAAAAASACEAAAAGAAAAAAATACEAAAAGAAAAAAAMABYAAAAHAAAAAAATABIAAAAHAAAAAAA=")
 tile_set = ExtResource("2_pwk3j")
 collision_enabled = false
 

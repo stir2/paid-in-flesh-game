@@ -39,7 +39,7 @@ tile_set = ExtResource("2_3aw7w")
 [node name="Hazards" type="TileMapLayer" parent="." unique_id=1683948581]
 z_index = -5
 texture_filter = 1
-tile_map_data = PackedByteArray("AAASAAwAAAAHAAAAAAAhAAwAAAAHAAAAAAA=")
+tile_map_data = PackedByteArray("AAARAAwAAAAHAAAAAAASAAsAAAAHAAAAAAAiAAwAAAAHAAAAAAAhAAsAAAAHAAAAAAA=")
 tile_set = ExtResource("2_3aw7w")
 collision_enabled = false
 
@@ -86,13 +86,13 @@ position = Vector2(8, 152)
 position = Vector2(8, 504)
 
 [node name="EnemySpawnMarker" parent="." unique_id=1737793044 instance=ExtResource("3_nhnu4")]
-marker_id = &"room_winding_left1_enemyspawnmarker"
 position = Vector2(412, 235)
+marker_id = &"room_winding_left1_enemyspawnmarker"
 
 [node name="EnemySpawnMarker2" parent="." unique_id=1909512229 instance=ExtResource("3_nhnu4")]
-marker_id = &"room_winding_left1_enemyspawnmarker2"
 position = Vector2(169, 455)
+marker_id = &"room_winding_left1_enemyspawnmarker2"
 
 [node name="EnemySpawnMarker3" parent="." unique_id=968517819 instance=ExtResource("3_nhnu4")]
-marker_id = &"room_winding_left1_enemyspawnmarker3"
 position = Vector2(254, 454)
+marker_id = &"room_winding_left1_enemyspawnmarker3"
