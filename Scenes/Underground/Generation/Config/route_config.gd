@@ -26,6 +26,9 @@ const OPENING_WIDTH: int = 5
 @export_range(0.0, 1.0) var directional_persistence: float = 0.25
 @export_range(0.1, 3.0) var turning_weight: float = 1.0
 @export_range(1, 12) var max_straight_run: int = 3
+## Maximum consecutive rooms with a straight vertical route through them.
+## Zero keeps the legacy routing. Applies to the combined graph across chunks.
+@export_range(0, 12) var max_consecutive_fall_rooms: int = 2
 @export_range(1.0, 3.0) var main_path_stretch: float = 1.5
 @export_range(0.05, 0.8) var room_density: float = 0.50
 @export_range(0.0, 1.0) var secondary_branch_probability: float = 0.35
@@ -44,6 +47,7 @@ func is_valid(room_size: Vector2i) -> bool:
 		and main_route_max_horizontal_drift >= 0
 		and branch_min_length > 0 and branch_max_length >= branch_min_length
 		and max_straight_run > 0 and main_path_stretch >= 1
+		and max_consecutive_fall_rooms >= 0 and max_consecutive_fall_rooms <= 12
 		and downward_preference >= 0 and downward_preference <= 1
 		and directional_persistence >= 0 and directional_persistence <= 1
 		and turning_weight > 0 and room_density > 0 and room_density <= 1

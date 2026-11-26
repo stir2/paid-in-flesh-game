@@ -32,6 +32,10 @@ static func apply(saved: Dictionary, configs: Array[Resource]) -> bool:
 			if not (info.usage & PROPERTY_USAGE_STORAGE) or not (info.usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
 				continue
 			if not values.has(info.name):
+				if configs[i] is AbyssRouteConfig and info.name == &"max_consecutive_fall_rooms":
+					# Preserve the exact routing of worlds created before the fall limit.
+					configs[i].set(info.name, 0)
+					continue
 				if configs[i] is AbyssProgressionConfig and info.name == &"checkpoint_requires_route":
 					configs[i].set(info.name, false)
 					continue

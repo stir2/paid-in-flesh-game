@@ -67,7 +67,8 @@ func is_main_chunk(coords: Vector2i) -> bool:
 
 
 func entrance_for_band(band: int, reference_x: int = 0) -> Vector2i:
-	return Vector2i(_column(band, reference_x) * _config.chunk_size.x + _hash(Vector2i(0, band), 101) % _config.chunk_size.x, band * _config.chunk_size.y)
+	var x := _column(band, reference_x) * _config.chunk_size.x + _hash(Vector2i(0, band), 101) % _config.chunk_size.x
+	return Vector2i(_vertical_port_column(x, band * _config.chunk_size.y - 1), band * _config.chunk_size.y)
 
 
 func entrance_room() -> Vector2i:
@@ -121,6 +122,8 @@ func boundary_contracts(coords: Vector2i) -> Array[Dictionary]:
 		var a: Vector2i
 		if side % 2 == 0:
 			var column := entrance_for_band(maxi(coords.y, neighbor.y), coords.x).x - origin.x if spine else _hash(canonical, 233) % _config.chunk_size.x
+			var upper_y := origin.y - 1 if side == 0 else origin.y + _config.chunk_size.y - 1
+			column = _vertical_port_column(origin.x + column, upper_y) - origin.x
 			a = origin + Vector2i(column, 0 if side == 0 else _config.chunk_size.y - 1)
 		else:
 			a = origin + Vector2i(_config.chunk_size.x - 1 if side == 1 else 0, _hash(canonical, 239) % _config.chunk_size.y)
@@ -129,7 +132,27 @@ func boundary_contracts(coords: Vector2i) -> Array[Dictionary]:
 	return result
 
 
+func _vertical_step_allowed(a: Vector2i, b: Vector2i) -> bool:
+	if a.x != b.x or _routes.max_consecutive_fall_rooms == 0 or _config.chunk_size.x < 2:
+		return true
+	# Stagger forbidden vertical edges by global column. Every column must turn
+	# within the limit; adjacent columns still provide connected lateral detours.
+	var period := _routes.max_consecutive_fall_rooms + 2
+	return posmod(mini(a.y, b.y), period) != posmod(a.x, period)
+
+
+func _vertical_port_column(x: int, upper_y: int) -> int:
+	var width := _config.chunk_size.x
+	var origin := floori(float(x) / width) * width
+	for offset in range(width):
+		var candidate := origin + posmod(x - origin + offset, width)
+		if _vertical_step_allowed(Vector2i(candidate, upper_y), Vector2i(candidate, upper_y + 1)):
+			return candidate
+	return x
+
+
 func _add(edges: Dictionary, a: Vector2i, b: Vector2i, kind: int) -> void:
+	if not _vertical_step_allowed(a, b): return
 	var id := _edge_id(a, b)
 	if not edges.has(id):
 		edges[id] = [a, b, kind]
@@ -140,6 +163,8 @@ func _direction_choices(pos: Vector2i, rect: Rect2i, used: Dictionary, previous:
 	for direction in DIRS:
 		var next: Vector2i = pos + direction
 		if not rect.has_point(next) or used.has(next):
+			continue
+		if not _vertical_step_allowed(pos, next):
 			continue
 		var weight := 1.0
 		if downward:
@@ -205,12 +230,35 @@ func _path(rect: Rect2i, start: Vector2i, goal: Vector2i, rng: RandomNumberGener
 		return best
 	if retry < 5:
 		return _path(rect, start, goal, rng, preferred_steps, retry + 1)
+	if _routes.max_consecutive_fall_rooms > 0:
+		return _fallback_path(rect, start, goal)
 	# Guaranteed finite Manhattan fallback on an obstacle-free logical room grid.
 	path = [start]
 	while path.back() != goal:
 		var pos: Vector2i = path.back()
 		path.append(pos + (Vector2i(signi(goal.x - pos.x), 0) if pos.x != goal.x else Vector2i(0, signi(goal.y - pos.y))))
 	return path
+
+
+func _fallback_path(rect: Rect2i, start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+	# A finite breadth-first fallback respects the same fall breaks as DFS.
+	var queue: Array[Vector2i] = [start]
+	var parents: Dictionary[Vector2i, Vector2i] = {start: start}
+	var head := 0
+	while head < queue.size() and not parents.has(goal):
+		var current := queue[head]
+		head += 1
+		for direction in DIRS:
+			var next: Vector2i = current + direction
+			if rect.has_point(next) and not parents.has(next) and _vertical_step_allowed(current, next):
+				parents[next] = current
+				queue.append(next)
+	assert(parents.has(goal), "Fall-limited room grid must remain connected")
+	var result: Array[Vector2i] = [goal]
+	while result.back() != start:
+		result.append(parents[result.back()])
+	result.reverse()
+	return result
 
 
 func _append_path(edges: Dictionary, path: Array[Vector2i], kind: int) -> void:

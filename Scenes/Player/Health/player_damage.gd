@@ -6,6 +6,8 @@ signal died(hit: CombatHit)
 signal attack_parried(hit: CombatHit, projectile: bool)
 @export var default_knockback: Vector2 = Vector2(180, -160)
 @export_range(0, 120) var reaction_frames: int = 8
+## Local impact freeze before knockback starts; zero disables it.
+@export_range(0, 60) var hitstop_frames: int = 10
 @export_range(0.0, 5000.0, 10.0) var knockback_deceleration: float = 600.0
 @export_range(0, 120) var hurt_flash_frames: int = 6
 @export_range(1, 60) var blink_period_frames: int = 6
@@ -14,6 +16,7 @@ signal attack_parried(hit: CombatHit, projectile: bool)
 @export var spike_knockback: Vector2 = Vector2(180, -180)
 const CHARGE_PARRY_FRAMES := 5
 var _reaction_until: int = -1
+var _hitstop_until: int = -1
 var _flash_until: int = -1
 var _parry_flash_until: int = -1
 var _parry_sources: Dictionary[int, bool] = {}
@@ -81,8 +84,11 @@ func is_dead() -> bool:
 func is_reacting() -> bool:
 	return Engine.get_physics_frames() < _reaction_until
 
+func is_hitstopped() -> bool:
+	return Engine.get_physics_frames() < _hitstop_until
+
 func is_action_locked() -> bool:
-	return is_dead() or is_reacting()
+	return is_dead() or is_hitstopped() or is_reacting()
 
 func begin_physics_tick() -> void:
 	if not is_dead() and not health.is_invulnerable():
@@ -109,17 +115,20 @@ func _on_damage_received(hit: CombatHit, amount: int) -> void:
 	if side == 0.0:
 		side = -player.facing_direction
 	player.velocity = Vector2(absf(knockback.x) * side, knockback.y)
-	_reaction_until = Engine.get_physics_frames() + reaction_frames
-	_flash_until = Engine.get_physics_frames() + hurt_flash_frames
+	_hitstop_until = Engine.get_physics_frames() + hitstop_frames
+	_reaction_until = _hitstop_until + reaction_frames
+	_flash_until = _hitstop_until + hurt_flash_frames
 	damage_reaction.emit(hit, amount) # Future impact audio/particles subscribe here.
 
 func _on_died(hit: CombatHit) -> void:
 	player.interrupt_for_damage()
 	player.velocity = Vector2(0,maxf(player.velocity.y,0.0))
+	_hitstop_until = -1
 	_reaction_until = -1
 	died.emit(hit)
 
 func _clear_reaction() -> void:
+	_hitstop_until = -1
 	_reaction_until = -1
 	_flash_until = -1
 	_parry_flash_until = -1
@@ -145,6 +154,8 @@ func _process(_delta: float) -> void:
 
 ## Preserve frame-based deadlines across an explicit gameplay pause.
 func compensate_paused_ticks(start_tick: int, ticks: int) -> void:
+	if _hitstop_until > start_tick:
+		_hitstop_until += ticks
 	if _reaction_until > start_tick:
 		_reaction_until += ticks
 	if _flash_until > start_tick:

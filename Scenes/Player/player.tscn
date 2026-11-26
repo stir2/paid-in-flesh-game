@@ -7,22 +7,16 @@
 [ext_resource type="Script" uid="uid://bpafenme6orer" path="res://Scenes/Player/player_animation.gd" id="5_animation"]
 [ext_resource type="Script" uid="uid://c40qg4hh7dk20" path="res://Scenes/Player/player_movement_effects.gd" id="6_effects"]
 [ext_resource type="Script" uid="uid://dn2jaudairnj0" path="res://Scenes/Player/Combat/player_combat.gd" id="7_combat"]
-
-[ext_resource type="Script" path="res://Scenes/Combat/health_component.gd" id="8_health"]
-[ext_resource type="Script" path="res://Scenes/Player/Health/player_damage.gd" id="9_damage"]
-[ext_resource type="Script" path="res://Scenes/Player/Health/player_hazards.gd" id="10_hazards"]
-
-[ext_resource type="Script" path="res://Scenes/Player/Stamina/stamina_component.gd" id="11_stamina"]
-[ext_resource type="Script" path="res://Scenes/Player/Climbing/player_climbing.gd" id="12_climbing"]
-
+[ext_resource type="Script" uid="uid://kj5y61ep5nm4" path="res://Scenes/Combat/health_component.gd" id="8_health"]
+[ext_resource type="Script" uid="uid://c15j6qt1uo44q" path="res://Scenes/Player/Health/player_damage.gd" id="9_damage"]
+[ext_resource type="Script" uid="uid://bw6spicwjxdg3" path="res://Scenes/Player/Health/player_hazards.gd" id="10_hazards"]
+[ext_resource type="Script" uid="uid://b55yl6p1bqn2w" path="res://Scenes/Player/Stamina/stamina_component.gd" id="11_stamina"]
+[ext_resource type="Script" uid="uid://cn7ygyac1do8h" path="res://Scenes/Player/Climbing/player_climbing.gd" id="12_climbing"]
 [ext_resource type="PackedScene" path="res://Scenes/Player/Stamina/stamina_hud.tscn" id="13_stamina_hud"]
-
 [ext_resource type="PackedScene" path="res://Scenes/Interaction/player_interaction.tscn" id="14_interaction"]
-
-[ext_resource type="SpriteFrames" path="res://Scenes/Player/Health/heal_sprite_frames.tres" id="15_heal_frames"]
-[ext_resource type="Script" path="res://Scenes/Player/Health/player_healing_effect.gd" id="16_heal_effect"]
-
-[ext_resource type="Texture2D" path="res://SpriteSheets/chiefSlashFx_100x100_24fps.png" id="17_slash_fx"]
+[ext_resource type="SpriteFrames" uid="uid://4n02d6qtc2vh" path="res://Scenes/Player/Health/heal_sprite_frames.tres" id="15_heal_frames"]
+[ext_resource type="Script" uid="uid://ds3tbuy4axrb4" path="res://Scenes/Player/Health/player_healing_effect.gd" id="16_heal_effect"]
+[ext_resource type="Texture2D" uid="uid://dm52413gm5ffk" path="res://SpriteSheets/chiefSlashFx_100x100_24fps.png" id="17_slash_fx"]
 
 [sub_resource type="RectangleShape2D" id="Rectangle_player"]
 resource_local_to_scene = true
@@ -58,7 +52,7 @@ offset = Vector2(0, 3)
 flip_h = true
 script = ExtResource("5_animation")
 
-[node name="SlashEffect" type="Sprite2D" parent="Visuals/AnimatedSprite2D"]
+[node name="SlashEffect" type="Sprite2D" parent="Visuals/AnimatedSprite2D" unique_id=306583827]
 visible = false
 texture = ExtResource("17_slash_fx")
 hframes = 3
@@ -83,7 +77,6 @@ shape = SubResource("Rectangle_attack")
 disabled = true
 
 [node name="ClimbDetector" type="Area2D" parent="." unique_id=1169019077]
-position = Vector2(0, -18)
 position = Vector2(0, -18)
 collision_layer = 0
 collision_mask = 0
@@ -110,37 +103,38 @@ script = ExtResource("6_effects")
 [node name="CombatController" type="Node" parent="." unique_id=627532239]
 script = ExtResource("7_combat")
 
-[node name="Health" type="Node" parent="."]
+[node name="Health" type="Node" parent="." unique_id=1515861823]
 script = ExtResource("8_health")
-invulnerability_frames = 36
 
-[node name="HazardDetector" type="Node" parent="."]
+[node name="HazardDetector" type="Node" parent="." unique_id=1877574508]
 script = ExtResource("10_hazards")
 
-[node name="DamageController" type="Node" parent="."]
+[node name="DamageController" type="Node" parent="." unique_id=1310516178]
 script = ExtResource("9_damage")
 
-[node name="Stamina" type="Node" parent="."]
+[node name="Stamina" type="Node" parent="." unique_id=1345525745]
 script = ExtResource("11_stamina")
 
-[node name="ClimbingController" type="Node" parent="."]
+[node name="ClimbingController" type="Node" parent="." unique_id=307435762]
 script = ExtResource("12_climbing")
 
-[node name="StaminaHUD" parent="." instance=ExtResource("13_stamina_hud")]
+[node name="StaminaHUD" parent="." unique_id=182516837 instance=ExtResource("13_stamina_hud")]
 z_index = 10
+layout_mode = 3
+anchors_preset = 0
 offset_left = -16.0
 offset_top = -54.0
 offset_right = 16.0
 offset_bottom = -52.0
 stamina_path = NodePath("../Stamina")
 
-[node name="InteractionController" parent="." instance=ExtResource("14_interaction")]
+[node name="InteractionController" parent="." unique_id=595534582 instance=ExtResource("14_interaction")]
 
-[node name="HealingEffect" type="AnimatedSprite2D" parent="."]
+[node name="HealingEffect" type="AnimatedSprite2D" parent="." unique_id=313286789]
 visible = false
-position = Vector2(0, -18)
 z_index = 5
 texture_filter = 1
+position = Vector2(0, -18)
 sprite_frames = ExtResource("15_heal_frames")
 animation = &"heal"
 script = ExtResource("16_heal_effect")

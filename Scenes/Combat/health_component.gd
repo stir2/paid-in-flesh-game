@@ -21,7 +21,7 @@ signal health_reset
 ## -1 starts full; zero starts dead. Runtime changes should use the APIs below.
 @export_range(-1, 1000) var starting_health: int = -1
 ## Physics ticks, independent of combat freezes. Zero disables timed immunity.
-@export_range(0, 600) var invulnerability_frames: int = 0
+@export_range(0, 600) var invulnerability_frames: int = 60 * 0.75
 var current_health: int = 0
 var max_health: int:
 	get:

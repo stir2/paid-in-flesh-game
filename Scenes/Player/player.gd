@@ -108,6 +108,9 @@ func _physics_process(delta: float) -> void:
 		velocity.y += get_gravity().y * gravity_multiplier * delta
 		move_and_slide()
 		return
+	if damage.is_hitstopped():
+		stamina.advance(delta, true)
+		return # Hold impact position and knockback velocity until the hurt freeze ends.
 	if combat.begin_physics_tick():
 		stamina.advance(delta, true)
 		return # Local combat freeze preserves velocity, floor history and timers.

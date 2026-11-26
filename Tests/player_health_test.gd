@@ -84,6 +84,10 @@ func test_iframe_timing_and_knockback() -> void:
 	check(player.velocity.x < 0 and player.velocity.y < 0, "Knockback not away/up from source")
 	var initial := player.position
 	await tick(2)
+	check(player.position == initial and player.damage.is_hitstopped(), "Hurt hitstop did not freeze the body")
+	check(not player.get_node("Visuals/AnimatedSprite2D").is_playing(), "Hurt hitstop did not hold the hurt pose")
+	check(not paused and Engine.time_scale == 1.0, "Hurt hitstop froze the whole game")
+	await tick(player.damage.hitstop_frames)
 	check(player.position.x < initial.x and player.position.y < initial.y, "Knockback failed to move body")
 	check(player.get_node("Visuals/AnimatedSprite2D").self_modulate != Color.WHITE, "Hurt flash absent")
 	check(player.collision_mask == 1 and player.get_node("Hurtbox").collision_layer == 4 and player.get_node("Hurtbox").monitoring, "Damage disabled terrain/hurtbox")
@@ -94,7 +98,7 @@ func test_iframe_timing_and_knockback() -> void:
 		await tick()
 	check(invulnerable_samples > 20, "Timed immunity was not exercised")
 	check(player.damage.receive_hit(payload) and health.current_health == 4, "Damage refused after exactly 36 ticks")
-	await tick(player.damage.reaction_frames + 1)
+	await tick(player.damage.hitstop_frames + player.damage.reaction_frames + 1)
 	Input.action_press("Move Right")
 	await tick(30)
 	check(player.velocity.x > 0 and not player.damage.is_reacting(), "Normal movement did not resume")
@@ -110,7 +114,7 @@ func test_interruptions() -> void:
 	check(player.damage.receive_hit(hit()), "Swing damage failed")
 	check(not player.combat.is_attacking() and not player.combat.buffered_dash, "Damage failed to clear swing and queued dash")
 	check(not player.combat.try_start_attack() and not player.can_start_dash(), "Actions permitted during hurt reaction")
-	await tick(player.damage.reaction_frames + 2)
+	await tick(player.damage.hitstop_frames + player.damage.reaction_frames + 2)
 	check(player.movement_state == Player.MovementState.NORMAL, "Held dash leaked out of damaged swing")
 	await place(Vector2(2700,-80))
 	Input.action_press("Action")
@@ -120,7 +124,7 @@ func test_interruptions() -> void:
 	check(player.movement_state == Player.MovementState.NORMAL and player.velocity.y < 0, "Dash charge failed to cancel into knockback")
 	check(not player.dash_available and player.dash_cooldown_frames_remaining > 0, "Damage refunded dash budget/cooldown")
 	var y := player.position.y
-	await tick(3)
+	await tick(player.damage.hitstop_frames + 3)
 	check(player.position.y != y, "Canceled charge left physics frozen")
 	await place(Vector2(2700,-80))
 	Input.action_press("Action")
@@ -139,7 +143,7 @@ func test_interruptions() -> void:
 	player.damage.receive_hit(hit())
 	check(not player.combat.is_swing_frozen() and not player.combat.is_hitstopped(), "Damage left combat frozen")
 	y = player.position.y
-	await tick(2)
+	await tick(player.damage.hitstop_frames + 2)
 	check(player.position.y != y and not player.combat.is_attacking(), "Freeze interruption failed to resume physics")
 	# A pending charged jump is canceled too.
 	await place()
